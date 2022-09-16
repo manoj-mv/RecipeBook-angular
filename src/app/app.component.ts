@@ -7,4 +7,9 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'RecipeBook';
+  currentPage: string = 'recipes';
+
+  switchPage(pageToSwitch: string) {
+    this.currentPage = pageToSwitch;
+  }
 }
