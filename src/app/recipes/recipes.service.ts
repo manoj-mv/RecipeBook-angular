@@ -23,4 +23,8 @@ export class RecipeService {
         this.shoppingListService.addMultipleIngredients(ingredients);
     }
 
+    getRecipeDataUsingIndex(index: number) {
+        return this.recipes.slice()[index];
+    }
+
 }
