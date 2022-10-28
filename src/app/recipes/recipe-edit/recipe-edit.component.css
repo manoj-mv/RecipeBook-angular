@@ -1,0 +1,15 @@
+.btn-grp .btn {
+    margin: 0 .5rem 1rem 0;
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.custom-controls {
+    margin-bottom: 1rem;
+}
+
+.form-control.ng-invalid.ng-touched {
+    border: 1px solid red;
+}
