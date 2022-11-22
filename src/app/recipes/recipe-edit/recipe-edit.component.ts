@@ -46,7 +46,7 @@ export class RecipeEditComponent implements OnInit {
       name = recipe.name;
       description = recipe.description;
       imagePath = recipe.imagePath;
-      if (recipe && recipe.ingredients.length > 0) {
+      if (recipe && recipe.ingredients && recipe.ingredients.length > 0) {
         for (let ingredient of recipe.ingredients) {
           ingredients.push(new FormGroup({
             'name': new FormControl(ingredient.name, Validators.required),
