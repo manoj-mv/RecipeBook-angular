@@ -7,7 +7,7 @@ import { ShoppingEditComponent } from "./shopping-edit/shopping-edit.component";
 import { ShoppingListComponent } from "./shopping-list.component";
 
 const shoppingListRoutes: Routes = [
-    { path: 'shopping-list', component: ShoppingListComponent },
+    { path: '', component: ShoppingListComponent },
 ]
 @NgModule({
     declarations: [
