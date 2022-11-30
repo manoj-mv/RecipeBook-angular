@@ -9,9 +9,11 @@ import { HeaderComponent } from './header/header.component';
 import { AppRoutingModule } from './app-routing.module';
 import { AuthInterceptorService } from './auth/auth-interceptor.service';
 import { SharedModule } from './shared/shared.module';
-import { shoppingListReducer } from './shopping-list/store/shopping-list.reducer';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { environment } from '../environments/environment';
+import * as fromApp from './store/app.reducer';
+import { EffectsModule } from '@ngrx/effects';
+import { AuthEffects } from './auth/store/auth.effects';
 
 @NgModule({
   declarations: [
@@ -25,8 +27,9 @@ import { environment } from '../environments/environment';
     HttpClientModule,
     AppRoutingModule,
     SharedModule,
-    StoreModule.forRoot({ shoppingList: shoppingListReducer }, {}),
+    StoreModule.forRoot(fromApp.appReducer, {}),
     StoreDevtoolsModule.instrument({ maxAge: 25, logOnly: environment.production }),
+    EffectsModule.forRoot([AuthEffects]),
   ],
   providers: [{
     provide: HTTP_INTERCEPTORS,

@@ -1,10 +1,14 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { Observable, Subscription } from 'rxjs';
 import { AlertComponent } from '../shared/alert/alert.component';
 import { PlaceholderDirective } from '../shared/directives/placeholder.directive';
+import *as fromApp from '../store/app.reducer';
+import * as authActions from 'src/app/auth/store/auth.action';
 import { AuthApiResponse, AuthService } from './auth.service';
+
 
 @Component({
   selector: 'app-auth',
@@ -19,7 +23,9 @@ export class AuthComponent implements OnInit, OnDestroy {
   @ViewChild(PlaceholderDirective) alertHost: PlaceholderDirective;
   private closeSub: Subscription;
 
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService,
+    private router: Router,
+    private store: Store<fromApp.AppState>) { }
 
   ngOnInit(): void {
     this.logginForm = new FormGroup({
@@ -27,7 +33,16 @@ export class AuthComponent implements OnInit, OnDestroy {
       password: new FormControl('', [Validators.required, Validators.maxLength(15), Validators.minLength(5)])
     });
 
-    this.authService.autoLogin();
+
+    this.store.select('auth').subscribe(authState => {
+      console.log(authState);
+      this.isLoading = authState.loading;
+      this.error = authState.authError;
+      if (this.error) {
+        this.showErrorAlert(this.error);
+      }
+    })
+
   }
 
   onAuthModeSwitch() {
@@ -42,25 +57,27 @@ export class AuthComponent implements OnInit, OnDestroy {
     let authApiCall$: Observable<AuthApiResponse>;
     this.isLoading = true;
     if (this.isLoginMode) {
-      authApiCall$ = this.authService.login(this.logginForm.value);
+      // authApiCall$ = this.authService.login(this.logginForm.value);
+      this.store.dispatch(new authActions.LoginStart(this.logginForm.value));
     } else {
       authApiCall$ = this.authService.signup(this.logginForm.value);
     }
 
-    authApiCall$.subscribe(
-      {
-        next: authResponse => {
-          console.log(authResponse);
-          this.isLoading = false;
-          this.router.navigate(['/recipes'])
-        },
-        error: errorMsg => {
-          this.error = errorMsg;
-          this.isLoading = false;
-          this.showErrorAlert(this.error);
-        }
-      }
-    );
+    // authApiCall$.subscribe(
+    //   {
+    //     next: authResponse => {
+    //       console.log(authResponse);
+    //       this.isLoading = false;
+    //       this.router.navigate(['/recipes'])
+    //     },
+    //     error: errorMsg => {
+    //       this.error = errorMsg;
+    //       this.isLoading = false;
+    //       this.showErrorAlert(this.error);
+    //     }
+    //   }
+    // );
+
     this.logginForm.reset();
   }
 
@@ -69,8 +86,6 @@ export class AuthComponent implements OnInit, OnDestroy {
   }
 
   showErrorAlert(errorMessage: string) {
-    console.log(errorMessage);
-
     const hostViewContainerRef = this.alertHost.viewContainerRef;
     hostViewContainerRef.clear();
     const componentRef = hostViewContainerRef.createComponent<AlertComponent>(AlertComponent);
