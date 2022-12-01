@@ -1,11 +1,12 @@
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
-import { Actions, Effect, ofType } from "@ngrx/effects";
+import { Actions, createEffect, Effect, ofType } from "@ngrx/effects";
 import { Store } from "@ngrx/store";
-import { catchError, map, of, switchMap, tap, throwError } from "rxjs";
+import { catchError, filter, map, of, switchMap, tap, throwError } from "rxjs";
 import * as fromApp from "src/app/store/app.reducer";
 import { environment } from "src/environments/environment";
+import { User } from "../user.model";
 import * as authActions from "./auth.action";
 
 
@@ -29,31 +30,72 @@ export class AuthEffects {
                 ...authData.payload, returnSecureToken: true
             }).pipe(
                 map(resp => {
-                    console.log(resp);
-
-                    const tokenExpirationDate = new Date(new Date().getTime() + (Number(resp.expiresIn) * 1000));
-                    console.log(tokenExpirationDate);
-
-                    return new authActions.Login({ email: resp.email, id: resp.localId, token: resp.idToken, tokenExpirationDate: tokenExpirationDate });
+                    return new authActions.AuthenticateSuccess(this.handleAuthentication(resp));
                 }),
                 catchError(err => {
                     const error: string = this.handleError(err);
-                    return of(new authActions.LoginFail({ error: error }));
+                    return of(new authActions.AuthenticateFail({ error: error }));
                 })
             );
         })
     );
 
     @Effect({ dispatch: false }) authSuccess = this.actions$.pipe(
-        ofType(authActions.LOGIN),
+        ofType(authActions.AUTHENTICATE_SUCCESS),
         tap(() => {
             this.router.navigate(['/recipes']);
         })
+    );
+
+    @Effect()
+    authSignup = this.actions$.pipe(
+        ofType(authActions.SIGNUP_START),
+        switchMap((actionData: authActions.SignupStart) => {
+            console.log(actionData);
+
+            return this.http.post<AuthApiResponse>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseApiKey, { ...actionData.payload, returnSecureToken: true })
+                .pipe(map(resp => {
+                    return new authActions.AuthenticateSuccess(this.handleAuthentication(resp));
+                }), catchError(err => {
+                    return of(new authActions.AuthenticateFail({ error: this.handleError(err) }));
+                }))
+        })
     )
+
+    AuthLogout$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(authActions.LOGOUT),
+            tap(() => {
+                localStorage.removeItem('userData');
+                this.router.navigate(['/auth']);
+            })
+        )
+    }, { dispatch: false });
+
+    AuthAutoLogin$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(authActions.AUTO_LOGIN),
+            map(() => {
+                console.log('auto login');
+
+                const userData: { email: string, id: string, _token: string, _tokenExpirationDate: string } = JSON.parse(localStorage.getItem('userData'));
+
+                if (userData) {
+                    const loadedUser = new User(userData.email, userData.id, userData._token, new Date(userData._tokenExpirationDate
+                    ));
+                    if (loadedUser.token) {
+                        // const remainingTime = loadedUser.expirationDate.getTime() - new Date().getTime();
+                        // this.autoLogout(remainingTime);
+                        return new authActions.AuthenticateSuccess({ email: loadedUser.email, id: loadedUser.id, token: loadedUser.token, tokenExpirationDate: loadedUser.expirationDate });
+                    }
+                }
+            }),
+            filter(Boolean)
+        )
+    })
 
     constructor(private actions$: Actions,
         private http: HttpClient,
-        private store: Store<fromApp.AppState>,
         private router: Router) { }
 
     private handleError(errorRes: HttpErrorResponse): string {
@@ -76,5 +118,13 @@ export class AuthEffects {
                 break;
         }
         return errorMsg;
+    }
+
+    private handleAuthentication(resp: AuthApiResponse) {
+        const tokenExpirationDate = new Date(new Date().getTime() + (Number(resp.expiresIn) * 1000));
+        console.log(tokenExpirationDate);
+        const user = new User(resp.email, resp.localId, resp.idToken, tokenExpirationDate);
+        localStorage.setItem('userData', JSON.stringify(user));
+        return { email: resp.email, id: resp.localId, token: resp.idToken, tokenExpirationDate: tokenExpirationDate };
     }
 }

@@ -5,6 +5,7 @@ import { AuthService } from "../auth/auth.service";
 import { User } from "../auth/user.model";
 import { DataStorageService } from "../shared/data-storage.service";
 import *as fromApp from "../store/app.reducer";
+import * as authActions from 'src/app/auth/store/auth.action';
 
 @Component({
     selector: 'app-header',
@@ -38,7 +39,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
     onLogout() {
-        this.authService.logout();
+        // this.authService.logout();
+        this.store.dispatch(new authActions.Logout());
     }
 
     ngOnDestroy(): void {

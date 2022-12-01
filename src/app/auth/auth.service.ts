@@ -29,32 +29,9 @@ export class AuthService {
     private router: Router,
     private store: Store<AppState>) { }
 
-  // get userSubject() {
-  //   return this.userSubject$;
-  // }
-
-  signup(signupData: { email: string, password: string }) {
-    return this.http.post<AuthApiResponse>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseApiKey, { ...signupData, returnSecureToken: true })
-      .pipe(
-        tap(resp => this.handleAuthentication(resp)),
-        catchError(this.handleError)
-      )
-  }
-
-  login(loginData: { email: string, password: string }) {
-    return this.http.post<AuthApiResponse>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseApiKey, {
-      ...loginData, returnSecureToken: true
-    }).pipe(
-      tap(resp => this.handleAuthentication(resp)),
-      catchError(this.handleError)
-    );
-  }
-
   logout() {
     // this.userSubject.next(null);
-    this.store.dispatch(new authActions.Logout());
     this.router.navigate(['/auth']);
-    localStorage.removeItem('userData');
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
     }
@@ -73,7 +50,7 @@ export class AuthService {
         const remainingTime = loadedUser.expirationDate.getTime() - new Date().getTime();
         this.autoLogout(remainingTime);
         // this.userSubject.next(loadedUser);
-        this.store.dispatch(new authActions.Login({ email: loadedUser.email, id: loadedUser.id, token: loadedUser.token, tokenExpirationDate: loadedUser.expirationDate }));
+        this.store.dispatch(new authActions.AuthenticateSuccess({ email: loadedUser.email, id: loadedUser.id, token: loadedUser.token, tokenExpirationDate: loadedUser.expirationDate }));
       }
     } else {
       return;
@@ -114,7 +91,7 @@ export class AuthService {
     const user = new User(data.email, data.localId, data.idToken, tokenExpirationDate);
     // console.log(user);
     // this.userSubject.next(user);
-    this.store.dispatch(new authActions.Login({ email: data.email, id: data.localId, token: data.idToken, tokenExpirationDate: tokenExpirationDate }));
+    this.store.dispatch(new authActions.AuthenticateSuccess({ email: data.email, id: data.localId, token: data.idToken, tokenExpirationDate: tokenExpirationDate }));
     this.autoLogout(Number(data.expiresIn) * 1000);
     localStorage.setItem('userData', JSON.stringify(user));
   }

@@ -16,12 +16,13 @@ export const initialState: AuthState = {
 export function authReducer(state: AuthState = initialState, action: authActions.authActionTypes) {
     switch (action.type) {
         case authActions.LOGIN_START:
+        case authActions.SIGNUP_START:
             return {
                 ...state,
                 authError: null,
                 loading: true
-            };
-        case authActions.LOGIN:
+            }
+        case authActions.AUTHENTICATE_SUCCESS:
             const payload = action.payload;
             console.log(payload);
 
@@ -31,7 +32,7 @@ export function authReducer(state: AuthState = initialState, action: authActions
                 authError: null,
                 loading: false
             };
-        case authActions.LOGIN_FAIL:
+        case authActions.AUTHENTICATE_FAIL:
             return {
                 ...state,
                 user: null,
@@ -43,6 +44,12 @@ export function authReducer(state: AuthState = initialState, action: authActions
                 ...state,
                 user: null,
                 loading: null
+            }
+
+        case authActions.CLEAR_ERROR:
+            return {
+                ...state,
+                authError: null
             }
         default:
             return state;
