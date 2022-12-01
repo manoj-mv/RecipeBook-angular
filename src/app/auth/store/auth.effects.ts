@@ -2,10 +2,10 @@ import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { Actions, createEffect, Effect, ofType } from "@ngrx/effects";
-import { Store } from "@ngrx/store";
 import { catchError, filter, map, of, switchMap, tap, throwError } from "rxjs";
 import * as fromApp from "src/app/store/app.reducer";
 import { environment } from "src/environments/environment";
+import { AuthService } from "../auth.service";
 import { User } from "../user.model";
 import * as authActions from "./auth.action";
 
@@ -67,6 +67,7 @@ export class AuthEffects {
             ofType(authActions.LOGOUT),
             tap(() => {
                 localStorage.removeItem('userData');
+                this.authService.clearLogoutTimer();
                 this.router.navigate(['/auth']);
             })
         )
@@ -84,8 +85,9 @@ export class AuthEffects {
                     const loadedUser = new User(userData.email, userData.id, userData._token, new Date(userData._tokenExpirationDate
                     ));
                     if (loadedUser.token) {
-                        // const remainingTime = loadedUser.expirationDate.getTime() - new Date().getTime();
+                        const remainingTime = loadedUser.expirationDate.getTime() - new Date().getTime();
                         // this.autoLogout(remainingTime);
+                        this.authService.setLogoutTimer(remainingTime);
                         return new authActions.AuthenticateSuccess({ email: loadedUser.email, id: loadedUser.id, token: loadedUser.token, tokenExpirationDate: loadedUser.expirationDate });
                     }
                 }
@@ -96,7 +98,8 @@ export class AuthEffects {
 
     constructor(private actions$: Actions,
         private http: HttpClient,
-        private router: Router) { }
+        private router: Router,
+        private authService: AuthService) { }
 
     private handleError(errorRes: HttpErrorResponse): string {
         let errorMsg = 'An unknown error occured.';
@@ -122,6 +125,7 @@ export class AuthEffects {
 
     private handleAuthentication(resp: AuthApiResponse) {
         const tokenExpirationDate = new Date(new Date().getTime() + (Number(resp.expiresIn) * 1000));
+        this.authService.setLogoutTimer(Number(resp.expiresIn) * 1000);
         console.log(tokenExpirationDate);
         const user = new User(resp.email, resp.localId, resp.idToken, tokenExpirationDate);
         localStorage.setItem('userData', JSON.stringify(user));

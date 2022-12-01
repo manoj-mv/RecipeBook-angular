@@ -18,8 +18,6 @@ export class AuthInterceptorService implements HttpInterceptor {
       map(authState => authState.user),
       exhaustMap(
         user => {
-          console.log(user);
-
           if (!user) {  // No user is authenticated
             return next.handle(req);
           }

@@ -10,7 +10,7 @@ import { AuthService } from "./auth.service";
 })
 export class AuthGaurd implements CanActivate {
 
-    constructor(private authService: AuthService,
+    constructor(
         private router: Router,
         private store: Store<fromApp.AppState>) { }
 
@@ -22,7 +22,6 @@ export class AuthGaurd implements CanActivate {
             if (authState.user && authState.user.token) {
                 return true;   // user is authenticated
             } else {
-                console.log('reached');
                 return this.router.createUrlTree(['/auth']);
             }
         }));
