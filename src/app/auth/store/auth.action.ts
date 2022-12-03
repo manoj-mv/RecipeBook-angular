@@ -22,7 +22,7 @@ export class AutoLogin implements Action {
 
 export class AuthenticateSuccess implements Action {
     readonly type = AUTHENTICATE_SUCCESS;
-    constructor(public payload: { email: string, id: string, token: string, tokenExpirationDate: Date }) { }
+    constructor(public payload: { email: string, id: string, token: string, tokenExpirationDate: Date, redirect: boolean }) { }
 }
 
 export class AuthenticateFail implements Action {

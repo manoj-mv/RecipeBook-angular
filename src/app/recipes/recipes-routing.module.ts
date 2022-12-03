@@ -14,7 +14,7 @@ const recipesRoutes: Routes = [
         component: RecipesComponent,
         canActivate: [AuthGaurd],
         children: [
-            { path: '', component: RecipeStartComponent },
+            { path: '', component: RecipeStartComponent, resolve: [RecipeResolverService] },
             { path: 'new', component: RecipeEditComponent },
             { path: ':id', component: RecipeDetailComponent, resolve: [RecipeResolverService] },
             { path: ':id/edit', component: RecipeEditComponent, resolve: [RecipeResolverService] }

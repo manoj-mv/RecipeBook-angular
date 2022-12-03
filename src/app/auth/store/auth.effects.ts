@@ -2,8 +2,7 @@ import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { Actions, createEffect, Effect, ofType } from "@ngrx/effects";
-import { catchError, filter, map, of, switchMap, tap, throwError } from "rxjs";
-import * as fromApp from "src/app/store/app.reducer";
+import { catchError, filter, map, of, switchMap, tap } from "rxjs";
 import { environment } from "src/environments/environment";
 import { AuthService } from "../auth.service";
 import { User } from "../user.model";
@@ -30,7 +29,7 @@ export class AuthEffects {
                 ...authData.payload, returnSecureToken: true
             }).pipe(
                 map(resp => {
-                    return new authActions.AuthenticateSuccess(this.handleAuthentication(resp));
+                    return new authActions.AuthenticateSuccess(this.handleAuthentication(resp, true));
                 }),
                 catchError(err => {
                     const error: string = this.handleError(err);
@@ -42,8 +41,10 @@ export class AuthEffects {
 
     @Effect({ dispatch: false }) authSuccess = this.actions$.pipe(
         ofType(authActions.AUTHENTICATE_SUCCESS),
-        tap(() => {
-            this.router.navigate(['/recipes']);
+        tap((authSuccessAction: authActions.AuthenticateSuccess) => {
+            if (authSuccessAction.payload.redirect) {
+                this.router.navigate(['/']);
+            }
         })
     );
 
@@ -55,7 +56,7 @@ export class AuthEffects {
 
             return this.http.post<AuthApiResponse>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseApiKey, { ...actionData.payload, returnSecureToken: true })
                 .pipe(map(resp => {
-                    return new authActions.AuthenticateSuccess(this.handleAuthentication(resp));
+                    return new authActions.AuthenticateSuccess(this.handleAuthentication(resp, true));
                 }), catchError(err => {
                     return of(new authActions.AuthenticateFail({ error: this.handleError(err) }));
                 }))
@@ -86,9 +87,8 @@ export class AuthEffects {
                     ));
                     if (loadedUser.token) {
                         const remainingTime = loadedUser.expirationDate.getTime() - new Date().getTime();
-                        // this.autoLogout(remainingTime);
                         this.authService.setLogoutTimer(remainingTime);
-                        return new authActions.AuthenticateSuccess({ email: loadedUser.email, id: loadedUser.id, token: loadedUser.token, tokenExpirationDate: loadedUser.expirationDate });
+                        return new authActions.AuthenticateSuccess({ email: loadedUser.email, id: loadedUser.id, token: loadedUser.token, tokenExpirationDate: loadedUser.expirationDate, redirect: false });
                     }
                 }
             }),
@@ -123,12 +123,12 @@ export class AuthEffects {
         return errorMsg;
     }
 
-    private handleAuthentication(resp: AuthApiResponse) {
+    private handleAuthentication(resp: AuthApiResponse, redirect: boolean) {
         const tokenExpirationDate = new Date(new Date().getTime() + (Number(resp.expiresIn) * 1000));
         this.authService.setLogoutTimer(Number(resp.expiresIn) * 1000);
         console.log(tokenExpirationDate);
         const user = new User(resp.email, resp.localId, resp.idToken, tokenExpirationDate);
         localStorage.setItem('userData', JSON.stringify(user));
-        return { email: resp.email, id: resp.localId, token: resp.idToken, tokenExpirationDate: tokenExpirationDate };
+        return { email: resp.email, id: resp.localId, token: resp.idToken, tokenExpirationDate: tokenExpirationDate, redirect: redirect };
     }
 }

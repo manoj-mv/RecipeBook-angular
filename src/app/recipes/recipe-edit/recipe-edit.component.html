@@ -50,7 +50,8 @@
 
             <div class="row" formArrayName="ingredients">
                 <div class="col-xs-12">
-                    <label *ngIf="getRecipe && getRecipe.ingredients && getRecipe.ingredients.length > 0 ">Ingredients
+                    <label
+                        *ngIf="currentRecipe && currentRecipe.ingredients && currentRecipe.ingredients.length > 0 ">Ingredients
                     </label>
                     <div class="row custom-controls" *ngFor="let ingredientCtrl of getIngredientControls; let i=index;"
                         [formGroupName]="i" id="{{i}}">

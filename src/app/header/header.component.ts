@@ -6,6 +6,8 @@ import { User } from "../auth/user.model";
 import { DataStorageService } from "../shared/data-storage.service";
 import *as fromApp from "../store/app.reducer";
 import * as authActions from 'src/app/auth/store/auth.action';
+import { fetchRecipes, storeRecipes } from "../recipes/store/recipes.action";
+
 
 @Component({
     selector: 'app-header',
@@ -31,11 +33,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
     collapsed = true;
 
     onSaveData() {
-        this.storageService.storeRecipes();
+        // this.storageService.storeRecipes();
+        this.store.dispatch(storeRecipes());
     }
 
     onFetchData() {
-        this.storageService.fetchRecipes().subscribe();
+        // this.storageService.fetchRecipes().subscribe();
+        this.store.dispatch(fetchRecipes());
     }
 
     onLogout() {
